@@ -106,6 +106,11 @@ class PHPRtfLite_ParFormat
      */
     protected $_border;
 
+    /**
+     * Tab stops
+     * @var array
+     */
+    protected $_tabs;
 
     /**
      * constructor
@@ -364,6 +369,30 @@ class PHPRtfLite_ParFormat
         return $this->_border;
     }
 
+    /**
+     * Adds a tab stop to the formatting of the element.
+     *
+     * @param float $distance the distance in centimeters from the left margin to the tab stop.
+     * @param string $alignment Tab alignment currently supports 'left', 'right', 'center','decimal'
+     * @param string $leader the character that 'leads up' to the tab stop.  options are 'none', 'hyphen', 'underline', 'thick', 'middot', 'dot ', 'equal'
+     */
+    public function setTab($distance, $alignment='left', $leader = 'none')
+    {
+        $this->_tabs[$alignment][$distance * PHPRtfLite_Unit::UNIT_CM] = $leader;
+    }
+
+    /**
+     * Set multiple tab stops at once.
+     *
+     * @see setTab()
+     * @param array An array with each instance containing the arguements for a single call of setTab
+     */
+    public function setTabs($array)
+    {
+        foreach($array as $val) {
+            $this->setTab($val["distance"], $val["alignment"], $val["leader"]);
+	}
+    }
 
     /**
      * gets rtf code of paragraph
@@ -431,7 +460,23 @@ class PHPRtfLite_ParFormat
             }
         }
 
+        $leaders = array('none'=> '', 'hyphen' => '\tlhyph ', 'underline'=> '\tlul ', 'thick'=> '\tlth ', 'middot'=> '\tlmdot ', 'dot'=> '\tldot ', 'equal'=> '\tleq ');
+        $tab_types = array('left'=>'', 'right'=> '\tqr ', 'center'=> '\tqc ', 'decimal'=>'\tqd ');
+
+        if (! empty($this->_tabs)) {
+            foreach ((array) $this->_tabs as $tab_type => $tabs) {
+                if ($tab_type != 'bar') {
+                    foreach ($this->_tabs[$tab_type] as $pos=> $leader) {
+                        $content .= $tab_types[$tab_type].$leaders[$leader].'\tx'.$pos.' ';
+                    }
+                } else {
+                    foreach ($this->_tabs[$tab_type] as $pos=> $leader) {
+                        $content .= $leaders[$leader].'\tb'.$pos.' ';
+                    }
+                }
+            }
+        }
+
         return $content;
     }
-
 }
